@@ -753,38 +753,42 @@ suite('Public API', function() {
 
   suite('sumStartsWithNEquals', function() {
     test('sum defaults to empty limits', function() {
-      var mq = MQ.MathField($('<span>').appendTo('#mock')[0]);
-      assert.equal(mq.latex(), '');
-
-      mq.cmd('\\sum');
-      assert.equal(mq.latex(), '\\sum_{ }^{ }');
-
-      mq.cmd('n');
-      assert.equal(mq.latex(), '\\sum_n^{ }', 'cursor in lower limit');
-    });
-    test('sum starts with `n=`', function() {
       var mq = MQ.MathField($('<span>').appendTo('#mock')[0], {
-        sumStartsWithNEquals: true
+        largeOperatorBody: true
       });
       assert.equal(mq.latex(), '');
 
       mq.cmd('\\sum');
-      assert.equal(mq.latex(), '\\sum_{n=}^{ }');
+      assert.equal(mq.latex(), '\\sum_{ }^{ }{ }');
+
+      mq.cmd('n');
+      assert.equal(mq.latex(), '\\sum_{ }^{ }{n}', 'cursor in body');
+    });
+    test('sum starts with `n=`', function() {
+      var mq = MQ.MathField($('<span>').appendTo('#mock')[0], {
+        sumStartsWithNEquals: true,
+        largeOperatorBody: true
+      });
+      assert.equal(mq.latex(), '');
+
+      mq.cmd('\\sum');
+      assert.equal(mq.latex(), '\\sum_{n=}^{ }{ }');
 
       mq.cmd('0');
-      assert.equal(mq.latex(), '\\sum_{n=0}^{ }', 'cursor after the `n=`');
+      assert.equal(mq.latex(), '\\sum_{n=0}^{ }{ }', 'cursor after the `n=`');
     });
     test('integral still has empty limits', function() {
       var mq = MQ.MathField($('<span>').appendTo('#mock')[0], {
-        sumStartsWithNEquals: true
+        sumStartsWithNEquals: true,
+        largeOperatorBody: true
       });
       assert.equal(mq.latex(), '');
 
       mq.cmd('\\int');
-      assert.equal(mq.latex(), '\\int_{ }^{ }');
+      assert.equal(mq.latex(), '\\int_{ }^{ }{ }');
 
       mq.cmd('0');
-      assert.equal(mq.latex(), '\\int_0^{ }', 'cursor in the from block');
+      assert.equal(mq.latex(), '\\int_{0}^{ }{ }', 'cursor in the from block');
     });
   });
 

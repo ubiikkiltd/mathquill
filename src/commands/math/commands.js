@@ -362,22 +362,25 @@ var SummationNotation = P(MathCommand, function(_, super_) {
     +   '<big>'+html+'</big>'
     +   '<span class="mq-from"><span>&0</span></span>'
     + '</span>'
+    + '<span class="mq-body"><span>&2</span></span>'
     ;
     Symbol.prototype.init.call(this, ch, htmlTemplate);
   };
   _.createLeftOf = function(cursor) {
     super_.createLeftOf.apply(this, arguments);
+
     if (cursor.options.sumStartsWithNEquals) {
       Letter('n').createLeftOf(cursor);
       Equality().createLeftOf(cursor);
     }
   };
   _.latex = function() {
-    function simplify(latex) {
-      return latex.length === 1 ? latex : '{' + (latex || ' ') + '}';
+    var hasBody = this.blocks.length > 2 && this.hasBody;
+    function wrap(latex, simplify) {
+      return (simplify && latex.length === 1) ? latex : '{' + (latex || ' ') + '}';
     }
-    return this.ctrlSeq + '_' + simplify(this.ends[L].latex()) +
-      '^' + simplify(this.ends[R].latex());
+    return this.ctrlSeq + '_' + wrap(this.blocks[0].latex(), !hasBody) +
+      '^' + wrap(this.blocks[1].latex(), !hasBody) + (hasBody ? wrap(this.blocks[2].latex(), false) : '');
   };
   _.parser = function() {
     var string = Parser.string;
@@ -386,24 +389,47 @@ var SummationNotation = P(MathCommand, function(_, super_) {
     var block = latexMathParser.block;
 
     var self = this;
-    var blocks = self.blocks = [ MathBlock(), MathBlock() ];
+    var blocks = self.blocks = [ MathBlock(), MathBlock(), MathBlock() ];
     for (var i = 0; i < blocks.length; i += 1) {
       blocks[i].adopt(self, self.ends[R], 0);
     }
 
-    return optWhitespace.then(string('_').or(string('^'))).then(function(supOrSub) {
-      var child = blocks[supOrSub === '_' ? 0 : 1];
+    return optWhitespace.then(string('_').or(string('^')).or(string('}{'))).then(function(part) {
+      var partsMap = { '_': 0, '^': 1, '}{': 2 };
+      var child = blocks[partsMap[part]];
       return block.then(function(block) {
         block.children().adopt(child, child.ends[R], 0);
         return succeed(self);
       });
     }).many().result(self);
   };
-  _.finalizeTree = function() {
-    this.downInto = this.ends[L];
-    this.upInto = this.ends[R];
-    this.ends[L].upOutOf = this.ends[R];
-    this.ends[R].downOutOf = this.ends[L];
+  _.finalizeTree = function(options) {
+    if (options.largeOperatorBody) {
+      this.hasBody = true;
+      this.downInto = this.blocks[2];
+      this.upInto = this.blocks[2];
+
+      this.blocks[2].upOutOf = this.blocks[1];
+      this.blocks[2].downOutOf = this.blocks[0];
+    } else {
+      if (this.blocks.length > 2) {
+        this.blocks[2].remove();
+        this.hasBody = false;
+      }
+
+      this.downInto = this.blocks[1];
+      this.upInto = this.blocks[0];
+    }
+
+    this.blocks[0].upOutOf = this.blocks[1];
+    this.blocks[1].downOutOf = this.blocks[0];
+  };
+  _.placeCursor = function(cursor) {
+    if (!cursor.options.sumStartsWithNEquals && cursor.options.largeOperatorBody) {
+      cursor.insAtRightEnd(this.blocks[2]);
+    } else {
+      super_.placeCursor.apply(this, arguments);
+    }
   };
 });
 
@@ -430,6 +456,7 @@ LatexCmds.integral = P(SummationNotation, function(_, super_) {
     +     '<span class="mq-sub">&0</span>'
     +     '<span style="display:inline-block;width:0">&#8203</span>'
     +   '</span>'
+    +   '<span class="mq-body"><span>&2</span></span>'
     + '</span>'
     ;
     Symbol.prototype.init.call(this, '\\int ', htmlTemplate);
