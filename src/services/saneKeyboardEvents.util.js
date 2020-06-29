@@ -68,17 +68,16 @@ var saneKeyboardEvents = (function() {
   // To the extent possible, create a normalized string representation
   // of the key combo (i.e., key code and modifier keys).
   function stringify(evt) {
-    var which = evt.which || evt.keyCode;
+    var which = evt.which || evt.keyCode || evt.code;
     var keyVal = KEY_VALUES[which];
-    var key;
     var modifiers = [];
 
-    if (evt.ctrlKey) modifiers.push('Ctrl');
+    if (evt.ctrlKey && keyVal !== 'Control') modifiers.push('Ctrl');
     if (evt.originalEvent && evt.originalEvent.metaKey) modifiers.push('Meta');
-    if (evt.altKey) modifiers.push('Alt');
-    if (evt.shiftKey) modifiers.push('Shift');
+    if (evt.altKey && keyVal !== 'Alt') modifiers.push('Alt');
+    if (evt.shiftKey && keyVal !== 'Shift') modifiers.push('Shift');
 
-    key = keyVal || String.fromCharCode(which);
+    var key = keyVal || (evt.key && evt.key.toUpperCase()) || String.fromCharCode(which);
 
     if (!modifiers.length && !keyVal) return key;
 
@@ -91,6 +90,10 @@ var saneKeyboardEvents = (function() {
   return function saneKeyboardEvents(el, handlers) {
     var keydown = null;
     var keypress = null;
+
+    // FIXME: we may have a bit of a chicken and an egg problem here
+    if (typeof handlers.selectFn !== 'function')
+      handlers.selectFn = select;
 
     var textarea = jQuery(el);
     var target = jQuery(handlers.container || textarea);
@@ -116,8 +119,8 @@ var saneKeyboardEvents = (function() {
         checker(e);
       });
     }
-    target.bind('keydown keypress input keyup focusout paste', function(e) { checkTextarea(e); });
 
+    target.bind('keydown keypress input keyup focusout paste', function(e) { checkTextarea(e); });
 
     // -*- public methods -*- //
     function select(text) {

@@ -402,13 +402,15 @@ var MathBlock = P(MathElement, function(_, super_) {
   };
 
   _.keystroke = function(key, e, ctrlr) {
-    if (ctrlr.options.spaceBehavesLikeTab
+    if (ctrlr.options.disableTypingLatex && key === '\\') {
+      e.preventDefault();
+    } else if (ctrlr.options.spaceBehavesLikeTab
         && (key === 'Spacebar' || key === 'Shift-Spacebar')) {
       e.preventDefault();
       ctrlr.escapeDir(key === 'Shift-Spacebar' ? L : R, key, e);
-      return;
+    } else {
+      return super_.keystroke.apply(this, arguments);
     }
-    return super_.keystroke.apply(this, arguments);
   };
 
   // editability methods: called by the cursor for editing, cursor movements,
@@ -445,6 +447,8 @@ var MathBlock = P(MathElement, function(_, super_) {
       return LatexCmds['÷'](ch);
     else if (options && options.typingAsteriskWritesTimesSymbol && ch === '*')
       return LatexCmds['×'](ch);
+    else if (options && options.typingColonWritesDivisionSymbol && ch === ':')
+      return LatexCmds['÷'](ch);
     else if (cons = CharCmds[ch] || LatexCmds[ch])
       return cons(ch);
     else

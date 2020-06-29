@@ -57,9 +57,17 @@ Controller.open(function(_) {
       if (cursor.selection) cursor.selection.clear();
       setTimeout(detach); //detaching during blur explodes in WebKit
     });
+
     function detach() {
       textareaSpan.detach();
       ctrlr.blurred = true;
+
+      // get rid of duplicate cursor in inner math fields
+      // bug: edge cases when interacting with... well the edges (e.g. padding/margin) of an inner field
+      cursor.hide();
+      // ensure that the cursor parent that we just hid is blurred
+      if (cursor.parent != root)
+        cursor.parent.blur();
     }
 
     ctrlr.selectFn = function(text) {
@@ -72,7 +80,10 @@ Controller.open(function(_) {
     var ctrlr = this, textarea = ctrlr.textarea, textareaSpan = ctrlr.textareaSpan;
 
     var keyboardEventsShim = this.options.substituteKeyboardEvents(textarea, this);
-    this.selectFn = function(text) { keyboardEventsShim.select(text); };
+    // FIXME: we may have a bit of a chicken and an egg problem here
+    if (typeof this.selectFn !== 'function')
+      this.selectFn = keyboardEventsShim.select;
+
     this.container.prepend(textareaSpan);
     this.focusBlurEvents();
   };
@@ -83,6 +94,9 @@ Controller.open(function(_) {
     this.scrollHoriz();
   };
   _.cut = function() {
+    if (this.options.disableClipboardEdits)
+      return;
+
     var ctrlr = this, cursor = ctrlr.cursor;
     if (cursor.selection) {
       setTimeout(function() {
@@ -95,6 +109,11 @@ Controller.open(function(_) {
     this.setTextareaSelection();
   };
   _.paste = function(text) {
+    if (this.options.disableClipboardEdits) {
+      this.cursor.show();
+      return;
+    }
+
     // TODO: document `statelessClipboard` config option in README, after
     // making it work like it should, that is, in both text and math mode
     // (currently only works in math fields, so worse than pointless, it

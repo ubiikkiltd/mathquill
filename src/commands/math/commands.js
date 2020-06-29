@@ -362,74 +362,105 @@ var SummationNotation = P(MathCommand, function(_, super_) {
     +   '<big>'+html+'</big>'
     +   '<span class="mq-from"><span>&0</span></span>'
     + '</span>'
-    + '<span class="mq-body"><span>&2</span></span>'
+    + '<!-- #body -->'
     ;
     Symbol.prototype.init.call(this, ch, htmlTemplate);
   };
   _.createLeftOf = function(cursor) {
+    this.hasBody = cursor.options.largeOperatorBody || this.hasBody;
     super_.createLeftOf.apply(this, arguments);
 
-    if (cursor.options.sumStartsWithNEquals) {
+    this._postInputActions(cursor, this.ctrlSeq.trim().slice(1));
+  };
+  _._postInputActions = function(cursor, ctrlName) {
+    var isSum = ctrlName === 'sum';
+
+    if (isSum && cursor.options.sumStartsWithNEquals) {
       Letter('n').createLeftOf(cursor);
       Equality().createLeftOf(cursor);
     }
+
+    if (this.hasBody) {
+      cursor.insAtRightEnd(this.blocks[2])
+
+      var open = CharCmds['(']('('); var close = CharCmds[')'](')');
+      open.createLeftOf(cursor);
+      close.createLeftOf(cursor);
+
+      var cursorPos = (!cursor.options.sumStartsWithNEquals || !isSum) ? open.blocks[0] : this.blocks[0];
+      cursor.insAtRightEnd(cursorPos);
+    }
+  };
+  _.html = function() {
+    this.htmlTemplate = this.htmlTemplate.replace('<!-- #body -->', 
+      this.hasBody ? '<span class="mq-body"><span>&2</span></span>' : '');
+
+    while (this.blocks.length < this.numBlocks()) {
+      var newBlock = MathBlock();
+      newBlock.adopt(this, this.ends[R], 0);
+      this.blocks.push(newBlock);
+    }
+
+    pray('no comments remain', this.htmlTemplate.indexOf('<!--') === -1);
+    return super_.html.call(this);
   };
   _.latex = function() {
     var hasBody = this.blocks.length > 2 && this.hasBody;
     function wrap(latex, simplify) {
       return (simplify && latex.length === 1) ? latex : '{' + (latex || ' ') + '}';
     }
+    var bodyOrTail = (this.blocks.length > 2 ? this.blocks[2].latex() : '');
     return this.ctrlSeq + '_' + wrap(this.blocks[0].latex(), !hasBody) +
-      '^' + wrap(this.blocks[1].latex(), !hasBody) + (hasBody ? wrap(this.blocks[2].latex(), false) : '');
+      '^' + wrap(this.blocks[1].latex(), !hasBody) + (hasBody ? wrap(bodyOrTail, false) : bodyOrTail);
   };
   _.parser = function() {
     var string = Parser.string;
     var optWhitespace = Parser.optWhitespace;
     var succeed = Parser.succeed;
+    var fail = Parser.fail;
     var block = latexMathParser.block;
 
     var self = this;
-    var blocks = self.blocks = [ MathBlock(), MathBlock(), MathBlock() ];
-    for (var i = 0; i < blocks.length; i += 1) {
-      blocks[i].adopt(self, self.ends[R], 0);
-    }
+    var nthBlock = 0;
+    self.blocks = [];
 
-    return optWhitespace.then(string('_').or(string('^')).or(string('}{'))).then(function(part) {
-      var partsMap = { '_': 0, '^': 1, '}{': 2 };
-      var child = blocks[partsMap[part]];
+    return optWhitespace.then(string('_').or(string('^'))).then(function(part) {
+      if (nthBlock === 0 && part === '^') {
+        var emptyBlock = MathBlock();
+        self.blocks.push(emptyBlock);
+        emptyBlock.adopt(self, self.ends[R], 0);
+        ++nthBlock;
+      }
+
       return block.then(function(block) {
-        block.children().adopt(child, child.ends[R], 0);
+        self.hasBody = (nthBlock === 2 && ((block.latex() || '').length > 1)) || this.hasBody;
+
+        if (self.hasBody || nthBlock < 2) {
+          self.blocks.push(block);
+          block.adopt(self, self.ends[R], 0);
+        } else if (nthBlock >= 2) {
+          return fail();
+        }
+
+        ++nthBlock;
         return succeed(self);
-      });
-    }).many().result(self);
+      }).times(1, (part === '^') ? 2 : 1).result(self);
+    }).atMost(2).result(self);
   };
   _.finalizeTree = function(options) {
-    if (options.largeOperatorBody) {
-      this.hasBody = true;
+    if ((options.largeOperatorBody && this.hasBody) || this.hasBody) {
       this.downInto = this.blocks[2];
       this.upInto = this.blocks[2];
 
       this.blocks[2].upOutOf = this.blocks[1];
       this.blocks[2].downOutOf = this.blocks[0];
     } else {
-      if (this.blocks.length > 2) {
-        this.blocks[2].remove();
-        this.hasBody = false;
-      }
-
       this.downInto = this.blocks[1];
       this.upInto = this.blocks[0];
     }
 
     this.blocks[0].upOutOf = this.blocks[1];
     this.blocks[1].downOutOf = this.blocks[0];
-  };
-  _.placeCursor = function(cursor) {
-    if (!cursor.options.sumStartsWithNEquals && cursor.options.largeOperatorBody) {
-      cursor.insAtRightEnd(this.blocks[2]);
-    } else {
-      super_.placeCursor.apply(this, arguments);
-    }
   };
 });
 
@@ -456,13 +487,11 @@ LatexCmds.integral = P(SummationNotation, function(_, super_) {
     +     '<span class="mq-sub">&0</span>'
     +     '<span style="display:inline-block;width:0">&#8203</span>'
     +   '</span>'
-    +   '<span class="mq-body"><span>&2</span></span>'
+    +   '<!-- #body -->'
     + '</span>'
     ;
     Symbol.prototype.init.call(this, '\\int ', htmlTemplate);
   };
-  // FIXME: refactor rather than overriding
-  _.createLeftOf = MathCommand.p.createLeftOf;
 });
 
 var Fraction =
@@ -771,9 +800,11 @@ function bindCharBracketPair(open, ctrlSeq) {
   CharCmds[open] = bind(Bracket, L, open, close, ctrlSeq, end);
   CharCmds[close] = bind(Bracket, R, open, close, ctrlSeq, end);
 }
+
 bindCharBracketPair('(');
 bindCharBracketPair('[');
 bindCharBracketPair('{', '\\{');
+
 LatexCmds.langle = bind(Bracket, L, '&lang;', '&rang;', '\\langle ', '\\rangle ');
 LatexCmds.rangle = bind(Bracket, R, '&lang;', '&rang;', '\\langle ', '\\rangle ');
 CharCmds['|'] = bind(Bracket, L, '|', '|', '|', '|');
