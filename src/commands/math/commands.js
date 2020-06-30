@@ -286,24 +286,25 @@ var SupSub = P(MathCommand, function(_, super_) {
     }(this, 'sub sup'.split(' ')[i], 'sup sub'.split(' ')[i], 'down up'.split(' ')[i]));
   };
   _.reflow = function() {
-    var $block = this.jQ ;//mq-supsub
-    var $prev = $block.prev() ;
+    var $block = this.jQ; //mq-supsub
+    var $prev = $block.prev();
 
     if ( !$prev.length ) {
         //we cant normalize it without having prev. element (which is base)
-        return ;
+        return;
     }
 
-    var $sup = $block.children( '.mq-sup' );//mq-supsub -> mq-sup
+    var $sup = $block.children( '.mq-sup' ); //mq-supsub -> mq-sup
     if ( $sup.length ) {
-        var sup_fontsize = parseInt( $sup.css('font-size') ) ;
-        var sup_bottom = $sup.offset().top + $sup.height() ;
+        var sup_fontsize = Number( $sup.css('font-size') );
+        var sup_bottom = $sup.offset().top + $sup.height();
         //we want that superscript overlaps top of base on 0.7 of its font-size
         //this way small superscripts like x^2 look ok, but big ones like x^(1/2/3) too
-        var needed = sup_bottom - $prev.offset().top  - 0.7*sup_fontsize ;
-        var cur_margin = parseInt( $sup.css('margin-bottom' ) ) ;
+        var needed = sup_bottom - $prev.offset().top  - 0.7 * sup_fontsize ;
+        var cur_margin = Number( $sup.css('margin-bottom') );
         //we lift it up with margin-bottom
-        $sup.css( 'margin-bottom', cur_margin + needed ) ;
+        if ((cur_margin + needed) >= 0)
+          $sup.css( 'margin-bottom', cur_margin + needed );
     }
   } ;
 
