@@ -405,7 +405,8 @@ var MathBlock = P(MathElement, function(_, super_) {
     if (ctrlr.options.disableTypingLatex && key === '\\') {
       e.preventDefault();
     } else if (ctrlr.options.spaceBehavesLikeTab
-        && (key === 'Spacebar' || key === 'Shift-Spacebar')) {
+        && (key === 'Spacebar' || key === 'Shift-Spacebar')
+        && (!e.key || e.key === ' ')) { // ensure international sticky modifier keys work with space
       e.preventDefault();
       ctrlr.escapeDir(key === 'Shift-Spacebar' ? L : R, key, e);
     } else {
