@@ -296,12 +296,12 @@ var SupSub = P(MathCommand, function(_, super_) {
 
     var $sup = $block.children( '.mq-sup' ); //mq-supsub -> mq-sup
     if ( $sup.length ) {
-        var sup_fontsize = Number( $sup.css('font-size') );
+        var sup_fontsize = Number( $sup.css('font-size').replace('px', '') );
         var sup_bottom = $sup.offset().top + $sup.height();
         //we want that superscript overlaps top of base on 0.7 of its font-size
         //this way small superscripts like x^2 look ok, but big ones like x^(1/2/3) too
         var needed = sup_bottom - $prev.offset().top  - 0.7 * sup_fontsize ;
-        var cur_margin = Number( $sup.css('margin-bottom') );
+        var cur_margin = Number( $sup.css('margin-bottom').replace('px', '') );
         //we lift it up with margin-bottom
         if ((cur_margin + needed) >= 0)
           $sup.css( 'margin-bottom', cur_margin + needed );
