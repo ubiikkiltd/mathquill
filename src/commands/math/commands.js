@@ -303,8 +303,9 @@ var SupSub = P(MathCommand, function(_, super_) {
         var needed = sup_bottom - $prev.offset().top  - 0.7 * sup_fontsize ;
         var cur_margin = Number( $sup.css('margin-bottom').replace('px', '') );
         //we lift it up with margin-bottom
-        if ((cur_margin + needed) >= 0)
-          $sup.css( 'margin-bottom', cur_margin + needed );
+        var target_margin = (cur_margin + needed);
+        if (!isNaN(target_margin) && target_margin != 0)
+          $sup.css( 'margin-bottom', Number.parseFloat(target_margin.toFixed(3)) );
     }
   } ;
 
