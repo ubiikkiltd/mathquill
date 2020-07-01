@@ -204,9 +204,7 @@ var SupSub = P(MathCommand, function(_, super_) {
     }
   };
   Options.p.charsThatBreakOutOfSupSub = '';
-  _.finalizeTree = function(options) {
-    this.disableSupHeightAdjust = options.disableSupHeightAdjust || false;
-
+  _.finalizeTree = function() {
     this.ends[L].write = function(cursor, ch) {
       if (cursor.options.autoSubscriptNumerals && this === this.parent.sub) {
         if (ch === '_') return;
@@ -297,7 +295,7 @@ var SupSub = P(MathCommand, function(_, super_) {
     }
 
     var $sup = $block.children( '.mq-sup' ); //mq-supsub -> mq-sup
-    if ( $sup.length && !this.disableSupHeightAdjust ) {
+    if ( $sup.length ) {
         var sup_fontsize = Number( $sup.css('font-size').slice(0, -2) );
         var sup_bottom = $sup.offset().top + $sup.height();
         //we want that superscript overlaps top of base on 0.7 of its font-size
@@ -306,8 +304,9 @@ var SupSub = P(MathCommand, function(_, super_) {
         var cur_margin = Number( $sup.css('margin-bottom').slice(0, -2) );
         //we lift it up with margin-bottom
         var target_margin = (cur_margin + needed);
-        if (!isNaN(target_margin) && target_margin < 0)
-          $sup.css( 'margin-bottom', Number.parseFloat(target_margin.toFixed(3)) );
+        // say no to anything that is small or big enough to result in scientific notation by default
+        if (!isNaN(target_margin) && target_margin != 0 && target_margin.toString().toLowerCase().indexOf('e') === -1)
+          $sup.css( 'margin-bottom', Number.parseFloat(target_margin) );
     }
   } ;
 
