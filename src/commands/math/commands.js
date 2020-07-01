@@ -38,7 +38,7 @@ else if ('filter' in div_style) { //IE 6, 7, & 8 fallback, see https://github.co
   forceIERedraw = function(el){ el.className = el.className; };
   scale = function(jQ, x, y) { //NOTE: assumes y > x
     x /= (1+(y-1)/2);
-    jQ.css('fontSize', y + 'em');
+    jQ.css('font-size', y + 'em');
     if (!jQ.hasClass('mq-matrixed-container')) {
       jQ.addClass('mq-matrixed-container')
       .wrapInner('<span class="mq-matrixed"></span>');
@@ -48,7 +48,7 @@ else if ('filter' in div_style) { //IE 6, 7, & 8 fallback, see https://github.co
         + '.Matrix(M11=' + x + ",SizingMethod='auto expand')"
     );
     function calculateMarginRight() {
-      jQ.css('marginRight', (innerjQ.width()-1)*(x-1)/x + 'px');
+      jQ.css('margin-right', (innerjQ.width()-1)*(x-1)/x + 'px');
     }
     calculateMarginRight();
     var intervalId = setInterval(calculateMarginRight);
@@ -60,7 +60,7 @@ else if ('filter' in div_style) { //IE 6, 7, & 8 fallback, see https://github.co
 }
 else {
   scale = function(jQ, x, y) {
-    jQ.css('fontSize', y + 'em');
+    jQ.css('font-size', y + 'em');
   };
 }
 
@@ -296,15 +296,15 @@ var SupSub = P(MathCommand, function(_, super_) {
 
     var $sup = $block.children( '.mq-sup' ); //mq-supsub -> mq-sup
     if ( $sup.length ) {
-        var sup_fontsize = Number( $sup.css('font-size').replace('px', '') );
+        var sup_fontsize = Number( $sup.css('font-size').slice(0, -2) );
         var sup_bottom = $sup.offset().top + $sup.height();
         //we want that superscript overlaps top of base on 0.7 of its font-size
         //this way small superscripts like x^2 look ok, but big ones like x^(1/2/3) too
-        var needed = sup_bottom - $prev.offset().top  - 0.7 * sup_fontsize ;
-        var cur_margin = Number( $sup.css('margin-bottom').replace('px', '') );
+        var needed = sup_bottom - $prev.offset().top  - 0.7*sup_fontsize ;
+        var cur_margin = Number( $sup.css('margin-bottom').slice(0, -2) );
         //we lift it up with margin-bottom
         var target_margin = (cur_margin + needed);
-        if (!isNaN(target_margin) && target_margin != 0)
+        if (!isNaN(target_margin) && target_margin < 0)
           $sup.css( 'margin-bottom', Number.parseFloat(target_margin.toFixed(3)) );
     }
   } ;
@@ -571,7 +571,7 @@ LatexCmds['√'] = P(MathCommand, function(_, super_) {
   };
   _.reflow = function() {
     var block = this.ends[R].jQ;
-    scale(block.prev(), 1, block.innerHeight()/+block.css('fontSize').slice(0,-2) - .1);
+    scale(block.prev(), 1, block.innerHeight()/Number(block.css('font-size').slice(0,-2)) - .1);
   };
 });
 
@@ -624,7 +624,7 @@ function DelimsMixin(_, super_) {
   };
   _.reflow = function() {
     var height = this.contentjQ.outerHeight()
-                 / parseFloat(this.contentjQ.css('fontSize'));
+                 / Number(this.contentjQ.css('font-size').slice(0, -2));
     scale(this.delimjQs, min(1 + .2*(height - 1), 1.2), 1.2*height);
   };
 }

@@ -81,7 +81,7 @@ UGLY_BASIC_JS = $(BUILD_DIR)/mathquill-basic.min.js
 
 # programs and flags
 UGLIFY ?= ./node_modules/.bin/uglifyjs
-UGLIFY_OPTS ?= --mangle --compress hoist_vars=true --comments /maintainers@mathquill.com/
+UGLIFY_OPTS ?= --mangle --compress hoist_vars=true --comments
 
 LESSC ?= ./node_modules/.bin/lessc
 LESS_OPTS ?=
