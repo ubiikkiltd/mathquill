@@ -204,7 +204,9 @@ var SupSub = P(MathCommand, function(_, super_) {
     }
   };
   Options.p.charsThatBreakOutOfSupSub = '';
-  _.finalizeTree = function() {
+  _.finalizeTree = function(options) {
+    this.disableHeightAdjust = options.disableSupHeightAdjust || false;
+
     this.ends[L].write = function(cursor, ch) {
       if (cursor.options.autoSubscriptNumerals && this === this.parent.sub) {
         if (ch === '_') return;
@@ -295,7 +297,7 @@ var SupSub = P(MathCommand, function(_, super_) {
     }
 
     var $sup = $block.children( '.mq-sup' ); //mq-supsub -> mq-sup
-    if ( $sup.length ) {
+    if ( $sup.length && !this.disableSupHeightAdjust ) {
         var sup_fontsize = Number( $sup.css('font-size').slice(0, -2) );
         var sup_bottom = $sup.offset().top + $sup.height();
         //we want that superscript overlaps top of base on 0.7 of its font-size
