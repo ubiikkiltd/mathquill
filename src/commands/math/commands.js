@@ -205,7 +205,7 @@ var SupSub = P(MathCommand, function(_, super_) {
   };
   Options.p.charsThatBreakOutOfSupSub = '';
   _.finalizeTree = function(options) {
-    this.disableHeightAdjust = options.disableSupHeightAdjust || false;
+    this.disableSupHeightAdjust = options.disableSupHeightAdjust || false;
 
     this.ends[L].write = function(cursor, ch) {
       if (cursor.options.autoSubscriptNumerals && this === this.parent.sub) {
@@ -337,7 +337,7 @@ LatexCmds._ = P(SupSub, function(_, super_) {
   _.finalizeTree = function() {
     this.downInto = this.sub = this.ends[L];
     this.sub.upOutOf = insLeftOfMeUnlessAtEnd;
-    super_.finalizeTree.call(this);
+    super_.finalizeTree.apply(this, arguments);
   };
 });
 
@@ -354,7 +354,7 @@ LatexCmds['^'] = P(SupSub, function(_, super_) {
   _.finalizeTree = function() {
     this.upInto = this.sup = this.ends[R];
     this.sup.downOutOf = insLeftOfMeUnlessAtEnd;
-    super_.finalizeTree.call(this);
+    super_.finalizeTree.apply(this, arguments);
   };
 });
 
@@ -777,7 +777,7 @@ var Bracket = P(P(MathCommand, DelimsMixin), function(_, super_) {
     };
   };
   _.siblingCreated = function(opts, dir) { // if something typed between ghost and far
-    if (dir === -this.side) this.finalizeTree(); // end of its block, solidify
+    if (dir === -this.side) this.finalizeTree(opts); // end of its block, solidify
   };
 });
 
@@ -825,14 +825,14 @@ LatexCmds.left = P(MathCommand, function(_) {
     return optWhitespace.then(regex(/^(?:[([|]|\\\{|\\langle(?![a-zA-Z])|\\lVert(?![a-zA-Z]))/))
       .then(function(ctrlSeq) {
         var open = (ctrlSeq.charAt(0) === '\\' ? ctrlSeq.slice(1) : ctrlSeq);
-	if (ctrlSeq=="\\langle") { open = '&lang;'; ctrlSeq = ctrlSeq + ' '; }
-	if (ctrlSeq=="\\lVert") { open = '&#8741;'; ctrlSeq = ctrlSeq + ' '; }
+        if (ctrlSeq=="\\langle") { open = '&lang;'; ctrlSeq = ctrlSeq + ' '; }
+        if (ctrlSeq=="\\lVert") { open = '&#8741;'; ctrlSeq = ctrlSeq + ' '; }
         return latexMathParser.then(function (block) {
           return string('\\right').skip(optWhitespace)
             .then(regex(/^(?:[\])|]|\\\}|\\rangle(?![a-zA-Z])|\\rVert(?![a-zA-Z]))/)).map(function(end) {
               var close = (end.charAt(0) === '\\' ? end.slice(1) : end);
-	      if (end=="\\rangle") { close = '&rang;'; end = end + ' '; }
-	      if (end=="\\rVert") { close = '&#8741;'; end = end + ' '; }
+              if (end=="\\rangle") { close = '&rang;'; end = end + ' '; }
+              if (end=="\\rVert") { close = '&#8741;'; end = end + ' '; }
               var cmd = Bracket(0, open, close, ctrlSeq, end);
               cmd.blocks = [ block ];
               block.adopt(cmd, 0, 0);
