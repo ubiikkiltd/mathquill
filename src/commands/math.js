@@ -402,7 +402,9 @@ var MathBlock = P(MathElement, function(_, super_) {
   };
 
   _.keystroke = function(key, e, ctrlr) {
-    if (ctrlr.options.disableTypingLatex && key === '\\') {
+    // key now always contains the actual resulting uppercase'd (for BC) character, if available,
+    // this eliminates problems with different keyboard layouts (slice() here ignores a possible modifier)
+    if (ctrlr.options.disableTypingLatex && key.slice(-1) === '\\') {
       e.preventDefault();
     } else if (ctrlr.options.spaceBehavesLikeTab
         && (key === 'Spacebar' || key === 'Shift-Spacebar')

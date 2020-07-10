@@ -77,6 +77,9 @@ var saneKeyboardEvents = (function() {
     if (evt.altKey && keyVal !== 'Alt') modifiers.push('Alt');
     if (evt.shiftKey && keyVal !== 'Shift') modifiers.push('Shift');
 
+    // prefer the actual character value, if available, over fromCharCode() because it
+    // is not capable of producing sensible values for all keyboard layouts (uppercase'd for BC)
+    // - e.g. caret on international keyboards where it acts as an extra modifier
     var key = keyVal || (evt.key && evt.key.toUpperCase()) || String.fromCharCode(which);
 
     if (!modifiers.length && !keyVal) return key;
