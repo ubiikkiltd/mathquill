@@ -51,6 +51,7 @@ Controller.open(function(_) {
     this.container.prepend(jQuery('<span class="mq-selectable">')
       .text('$'+ctrlr.exportLatex()+'$'));
     ctrlr.blurred = true;
+    cursor.hide().parent.blur();
     textarea.bind('cut paste', false)
     .bind('copy', function() { ctrlr.setTextareaSelection(); })
     .focus(function() { ctrlr.blurred = false; }).blur(function() {
@@ -62,12 +63,8 @@ Controller.open(function(_) {
       textareaSpan.detach();
       ctrlr.blurred = true;
 
-      // get rid of duplicate cursor in inner math fields
-      // bug: edge cases when interacting with... well the edges (e.g. padding/margin) of an inner field
-      cursor.hide();
-      // ensure that the cursor parent that we just hid is blurred
-      if (cursor.parent != root)
-        cursor.parent.blur();
+      // revised as per PR: mathquill#592
+      cursor.hide().parent.blur();
     }
 
     ctrlr.selectFn = function(text) {
